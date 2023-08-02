@@ -9,12 +9,6 @@ namespace CalcWebApi.Controllers
     public class calcController : ControllerBase
     {
         [HttpGet]
-        public IActionResult Get()
-        {
-            var indexPath = Path.Combine(Directory.GetCurrentDirectory(), "ClientApp", "index.html");
-            return PhysicalFile(indexPath, "text/html");
-        }
-        [HttpGet]
         [Route("addition")]
         public IActionResult Addition([FromQuery] Addition operation)
         {
