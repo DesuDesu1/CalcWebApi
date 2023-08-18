@@ -95,8 +95,7 @@ namespace CalcWebApi.ValidationAttributes
                 if ((previousChar is '-'
                     || previousChar is '+'
                     || previousChar is '/'
-                    || previousChar is '*'
-                    || previousChar is '\0')
+                    || previousChar is '*')
                     && currentChar is '-'
                     && !NextCharIsDigit
                     )

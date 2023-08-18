@@ -1,162 +1,58 @@
-using CalcWebApi.Model;
+using CalcWebApi.Services;
+using CalcWebApi.V1;
+using CalcWebApi.V1.Requests;
 using MathNet.Symbolics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CalcWebApi.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
     public class calcController : ControllerBase
     {
-        [HttpGet]
-        [Route("addition")]
-        public IActionResult Addition([FromQuery] Addition operation)
-        {
-            if (!TryValidateModel(operation))
-            {
-                return BadRequest(ModelState);
-            }
+        private readonly IBasicOperationsService _basicOperations;
+        private readonly IEvaluationService _evaluation;
 
-            var result = operation.Calculate();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
+        public calcController(IBasicOperationsService basicOperations, IEvaluationService evaluation)
+        {
+            _basicOperations = basicOperations;
+            _evaluation = evaluation;
+        }
+        [HttpGet(ApiRoutes.MathOperations.Addition)]
+        public IActionResult Addition([FromQuery] IncomingValues values)
+        {
+            return Ok(_basicOperations.Sum(values));
         }
 
-        [HttpGet]
-        [Route("subtraction")]
-        public IActionResult Subtraction([FromQuery] Subtraction operation)
+        [HttpGet(ApiRoutes.MathOperations.Subtraction)]
+        public IActionResult Subtraction([FromQuery] IncomingValues values)
         {
-            if (!TryValidateModel(operation))
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = operation.Calculate();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
+            return Ok(_basicOperations.Subtract(values));
         }
 
-        [HttpGet]
-        [Route("multiplication")]
-        public IActionResult Multiplication([FromQuery] Multiplication operation)
+        [HttpGet(ApiRoutes.MathOperations.Multiply)]
+        public IActionResult Multiplication([FromQuery] IncomingValues values)
         {
-            if (!TryValidateModel(operation))
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = operation.Calculate();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
+            return Ok(_basicOperations.Multiply(values));
         }
-        [HttpGet]
-        [Route("division")]
-        public IActionResult Division([FromQuery] Division operation)
+        [HttpGet(ApiRoutes.MathOperations.Divide)]
+        public IActionResult Division([FromQuery] IncomingValues values)
         {
-            if (!TryValidateModel(operation))
-            {
-                return BadRequest(ModelState);
-            }
-            var result = operation.Calculate();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
+            return Ok(_basicOperations.Divide(values));
         }
-
-        [HttpGet]
-        [Route("exponentiation")]
-        public IActionResult Exponentiation([FromQuery] Exponentiation operation)
+        [HttpGet(ApiRoutes.MathOperations.Pow)]
+        public IActionResult Exponentiation([FromQuery] IncomingValues values)
         {
-            if (!TryValidateModel(operation))
-            {
-                return BadRequest(ModelState);
-            }
-
-            var result = operation.Calculate();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
+            return Ok(_basicOperations.Pow(values));
         }
-
-        [HttpGet]
-        [Route("root")]
-        public IActionResult Root([FromQuery] Root operation)
+        [HttpGet(ApiRoutes.MathOperations.Root)]
+        public IActionResult Root([FromQuery] IncomingValues values)
         {
-            if (!TryValidateModel(operation))
-                return BadRequest(ModelState);
-            var result = operation.Calculate();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
+            return Ok(_basicOperations.Root(values));
         }
-        [HttpGet]
-        [Route("evaluate")]
-        public IActionResult ExpressionEvaluation([FromQuery] ComplexEvaluation model)
+        [HttpGet(ApiRoutes.MathOperations.ExpressionEvaluation)]
+        public IActionResult ExpressionEvaluation([FromQuery] IncomingExpression exp)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-            Stack<double> operandStack = new Stack<double>();
-            List<string> orderedTokens = model.OrderTokens(model.TokenizeExpression());
-            foreach (string token in orderedTokens)
-            {
-                double number;
-                if (double.TryParse(token, out number))
-                {
-                    operandStack.Push(double.Parse(token));
-                }
-                else if (token == "+" || token == "-" || token == "*" || token == "/" || token == "^")
-                {
-                    double operand2 = operandStack.Pop();
-                    double operand1 = operandStack.Pop();
-                    var opres = PerformOperation(token, operand1, operand2);
-                    if (opres is BadRequestObjectResult)
-                        return BadRequest(opres);
-                    if(opres is OkObjectResult okres)
-                        operandStack.Push((double)okres.Value!);
-                }
-            }
-            var result = operandStack.Pop();
-            if (double.IsInfinity(result))
-                return Ok("inf");
-            if (double.IsNaN(result))
-                return BadRequest("Nan");
-            return Ok(result);
-        }
-        [NonAction]
-        private IActionResult PerformOperation(string operatorToken, double operand1, double operand2)
-        {
-            switch (operatorToken)
-            {
-                case "+":
-                    return Addition(new Addition { firstValue = operand1, secondValue = operand2 });
-                case "-":
-                    return Subtraction(new Subtraction { firstValue = operand1, secondValue = operand2 });
-                case "*":
-                    return Multiplication(new Multiplication { firstValue = operand1, secondValue = operand2 });
-                case "/":
-                    return Division(new Division { firstValue = operand1, secondValue = operand2 });
-                case "^":
-                    return Exponentiation(new Exponentiation { firstValue = operand1, secondValue = operand2 });
-                default:
-                    return null;
-            }
+            return Ok(_evaluation.EvaluateExpression(exp));
         }
     }
 }
