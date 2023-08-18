@@ -16,7 +16,6 @@ namespace CalcWebApi.Validation
             RuleFor(x => x.Expression.First()).Must(HaveValidFirstCharacter).WithMessage("Expression can only start with a digit ( or -");
             RuleFor(x => x.Expression.Last()).Must(HaveValidLastCharacter).WithMessage("Expression can end only with character or )");
             RuleFor(x => x.Expression).Must(HaveValidSyntax).WithMessage("Incorrect Syntax");
-            Console.WriteLine(errorMessage);
         }
         private bool HaveValidFirstCharacter(char firstChar)
         {
@@ -36,7 +35,6 @@ namespace CalcWebApi.Validation
         private void IncorrectSequenceErrorMessage(params char[] chars)
         {
              errorMessage = $"Incorrect sequence: {string.Concat(chars.Where(ch => ch != '\0'))}";
-            Console.WriteLine(errorMessage);
 
         }
         private bool IsMathOperator(char currentChar)
