@@ -20,7 +20,13 @@ namespace CalcWebApi.Services
             foreach (string token in orderedTokens)
             {
                 double number;
-                if (double.TryParse(token, out number))
+                if (token is "u")
+                {
+                    double operand = operandStack.Pop();
+                    double result = PerformOperation("*", operand, -1);
+                    operandStack.Push(result);
+                }
+                else if (double.TryParse(token, out number))
                 {
                     operandStack.Push(double.Parse(token));
                 }
@@ -29,6 +35,7 @@ namespace CalcWebApi.Services
                     double operand2 = operandStack.Pop();
                     double operand1 = operandStack.Pop();
                     double result = PerformOperation(token, operand1, operand2);
+
                     operandStack.Push(result);
                 }
             }
@@ -62,13 +69,15 @@ namespace CalcWebApi.Services
                         tokens.Add(currentToken.ToString());
                         currentToken.Clear();
                     }
-
-                    if (currentToken.Length == 0 && currentChar == '-' && (i == 0 || IsOperator(expression[i - 1]) || expression[i - 1] == '('))
+                    //Detecting unary minus
+                    if (currentToken.Length == 0 
+                        && currentChar == '-' 
+                        && (i == 0 
+                        || IsOperator(expression[i - 1]) 
+                        || expression[i - 1] == '('))
                     {
-                        currentToken.Append("-1");
-                        tokens.Add(currentToken.ToString());
+                        tokens.Add("u");
                         currentToken.Clear();
-                        tokens.Add("*");
                     }
                     else
                     {
@@ -95,8 +104,6 @@ namespace CalcWebApi.Services
             {
                 tokens.Add(currentToken.ToString());
             }
-
-            Console.WriteLine(string.Join(' ', tokens));
             return tokens.ToArray();
         }
 
@@ -113,7 +120,9 @@ namespace CalcWebApi.Services
                 }
                 else if (IsOperator(token))
                 {
-                    while (operatorStack.Count > 0 && IsOperator(operatorStack.Peek()) && GetPrecedence(token) <= GetPrecedence(operatorStack.Peek()))
+                    while (operatorStack.Count > 0 &&
+                        IsOperator(operatorStack.Peek()) &&
+                        GetPrecedence(token) <= GetPrecedence(operatorStack.Peek()))
                     {
                         orderedTokens.Add(operatorStack.Pop());
                     }
@@ -134,13 +143,16 @@ namespace CalcWebApi.Services
                         operatorStack.Pop();
                     }
                 }
+                else if (token == "u")
+                {
+                    operatorStack.Push(token); // Push "u" directly to the operator stack
+                }
             }
 
             while (operatorStack.Count > 0)
             {
                 orderedTokens.Add(operatorStack.Pop());
             }
-            Console.WriteLine("Ordered tokens: " + String.Join(' ', orderedTokens));
             return orderedTokens;
         }
         private bool IsNumber(string token)
@@ -151,11 +163,11 @@ namespace CalcWebApi.Services
 
         private bool IsOperator(char c)
         {
-            return c == '+' || c == '-' || c == '*' || c == '/' || c == '^';
+            return c == '+' || c == '-' || c == '*' || c == '/' || c == '^' || c == 'u';
         }
         private bool IsOperator(string token)
         {
-            return token == "+" || token == "-" || token == "*" || token == "/" || token == "^";
+            return token == "+" || token == "-" || token == "*" || token == "/" || token == "^" || token == "u";
         }
         private int GetPrecedence(string token)
         {
@@ -169,6 +181,8 @@ namespace CalcWebApi.Services
                     return 2;
                 case "^":
                     return 3;
+                case "u":
+                    return 4;
                 default:
                     return 0;
             }
